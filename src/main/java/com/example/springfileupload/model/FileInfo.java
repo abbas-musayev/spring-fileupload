@@ -6,11 +6,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import javax.persistence.*;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
 public class FileInfo {
-    String name;
-    String url;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    int id;
+    String fileName;
+    String fileType;
+    @Lob
+    byte[] fileData;
 }

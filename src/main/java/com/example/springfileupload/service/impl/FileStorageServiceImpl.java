@@ -1,68 +1,74 @@
 package com.example.springfileupload.service.impl;
 
+import com.example.springfileupload.repo.FileInfoRepo;
+import com.example.springfileupload.model.FileInfo;
 import com.example.springfileupload.service.FileStorageService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.FileSystemUtils;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.stream.Stream;
+
 @Service
+@Slf4j
 public class FileStorageServiceImpl implements FileStorageService {
 
-    private final Path root = Paths.get("uploads");
+    private final FileInfoRepo repo;
 
-    @Override
-    public void init() {
-        try {
-            Files.createDirectory(root);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not initialize folder for upload!");
-        }
+    public FileStorageServiceImpl(FileInfoRepo repo) {
+        this.repo = repo;
     }
 
     @Override
-    public void save(MultipartFile file) {
-        try {
-            Files.copy(file.getInputStream(),this.root.resolve(file.getOriginalFilename()));
-        } catch (IOException e) {
-            throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
-        }
+    public String saveLocal(MultipartFile file) throws IOException {
+
+        String filename = file.getOriginalFilename();
+        log.info(filename);
+        Path path = Paths.get("F:/" + filename);
+        log.info(String.valueOf(path));
+        Files.write(path, file.getBytes());
+        return "File";
     }
 
     @Override
-    public Resource load(String fileName) {
-        Path file = root.resolve(fileName);
-        try {
-            UrlResource resource = new UrlResource(file.toUri());
-            if (resource.exists() || resource.isReadable()){
-                return resource;
-            }
-            else {
-                throw new RuntimeException("Could not read the file!");
-            }
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Error: " + e.getMessage());
-        }
+    public String saveDB(MultipartFile file) throws IOException {
+        FileInfo uploadFile = new FileInfo();
+
+        uploadFile.setFileName(file.getOriginalFilename());
+        uploadFile.setFileData(file.getBytes());
+        uploadFile.setFileType(file.getContentType());
+        repo.save(uploadFile);
+        return "File Save Olundu";
     }
 
     @Override
-    public void deleteAll() {
-        FileSystemUtils.deleteRecursively(root.toFile());
+    public File readFileUrl(String fileUrl) throws IOException {
+
+        File file1 = ResourceUtils.getFile(fileUrl);
+        return file1;
     }
 
     @Override
-    public Stream<Path> loadAll() {
-        try {
-            return Files.walk(root,1).filter(path -> path.equals(this.root)).map(this.root::relativize);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not load the files!");
-        }
-        }
+    public FileInfo readFileResource(String fileUrl) throws IOException {
+        File file = ResourceUtils.getFile(fileUrl);
+
+        byte[] bytes = Files.readAllBytes(file.toPath());
+        String type = Files.probeContentType(file.getAbsoluteFile().toPath());
+
+        FileInfo info = new FileInfo();
+        info.setFileName(file.getName());
+        info.setFileType(type);
+        info.setFileData(bytes);
+        return info;
+    }
 }

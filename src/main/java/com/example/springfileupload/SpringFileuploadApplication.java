@@ -9,18 +9,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import javax.annotation.Resource;
 
 @SpringBootApplication
-public class SpringFileuploadApplication implements CommandLineRunner {
+public class SpringFileuploadApplication{
 
     @Resource
     FileStorageService storageService;
 
     public static void main(String[] args) {
         SpringApplication.run(SpringFileuploadApplication.class, args);
-    }
-
-    @Override
-    public void run(String... arg) throws Exception {
-        storageService.deleteAll();
-        storageService.init();
     }
 }
